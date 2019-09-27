@@ -11,9 +11,10 @@ const _ = require("lodash");
 class Scheduler {
     constructor() {
         this.dates = [];
+        this.days = 366; //assumed to be within a year
         this.beginningOfYear = moment("2017-01-01");
 
-        for (let i = 0; i < 366; i++) {
+        for (let i = 0; i < this.days; i++) {
             this.dates.push([]);
         }
     }
@@ -26,7 +27,7 @@ class Scheduler {
 
         let previousCount = this.dates[0].length;
 
-        for (let i = 1; i < 366; i++) {
+        for (let i = 1; i < this.days; i++) {
             let currentCount = this.dates[i].length;
             let attendBothDays = _.intersection(this.dates[i], this.dates[i - 1])
             let attendingCount = attendBothDays.length;
@@ -43,7 +44,6 @@ class Scheduler {
     }
 
     pushToArray = (email, date) => this.dates[this.mapDateToIndex(moment(date))].push(email);
-
 
     getAttendeesForDate = (date) => this.dates[this.mapDateToIndex(moment(date))]
 }
@@ -66,20 +66,21 @@ axios.get("https://candidate.hubteam.com/candidateTest/v3/problem/dataset?userKe
             countries: []
         }
         Object.keys(countries).forEach(country => {
-            let bestDate = countries[country].getBestDate().toISOString().substr(0, "2017-06-01".length);
-            let attendees = countries[country].getAttendeesForDate(bestDate);
-            ans = {
+            var bestDate = countries[country].getBestDate()
+            if (bestDate) bestDate = bestDate.format("YYYY-MM-DD");
+            let attendees = countries[country].getAttendeesForDate(bestDate) || [];
+            countryAns = {
                 attendeeCount: attendees.length,
                 attendees,
                 name: country,
                 startDate: bestDate
             }
 
-            res.countries.push(ans)
+            res.countries.push(countryAns)
         });
 
         axios.post("https://candidate.hubteam.com/candidateTest/v3/problem/result?userKey=d641cd3acc4f2474d674f70b345c", res)
             .then(res => {
-                console.log(res.status)
+                console.log(res.status == 200 ? ":)" : ":(")
             })
     })
